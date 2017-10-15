@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Image;
 use Illuminate\Support\Facades\Response;
+use DB;
 
 
 class ImagesController extends Controller
@@ -16,7 +17,7 @@ class ImagesController extends Controller
      */
     public function index()
     {
-        $images = Image::all();
+        $images = DB::table('images')->orderBy('id','desc')->get();
         $response = Response::json($images, 200);
         return $response;
     }
@@ -74,7 +75,17 @@ class ImagesController extends Controller
      */
     public function show($id)
     {
-        //
+        $image = Image::find($id);
+
+        if(!$image){
+            return Response::json([
+                'error' => [
+                    'message' => "No se ha encontrado la imagen."
+                ]
+            ], 404);
+        }
+
+        return Response::json($image, 200);
     }
 
     /**
@@ -97,7 +108,39 @@ class ImagesController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        if((!$request->title) || (!$request->thumbnail) || (!$request->imageLink)){
+            $response = Response::json([
+                'message' => 'Por favor escriba todos los campos requeridos'
+            ], 200); //error 422 pero no pasara mensaje
+            return $response;
+        }
+
+        $image = Image::find($id);
+
+        if(!$image){
+            return Response::json([
+                'error' => [
+                    'message' => "No se ha encontrado la imagen."
+                ]
+            ], 404);
+        }
+
+        $image->thumbnail = trim($request->thumbnail);
+        $image->imageLink = trim($request->imageLink);
+        $image->title = trim($request->title);
+        $image->description = trim($request->description);
+        $image->save();
+
+        $message = 'La imagen ha sido actualizada de modo correcto';
+
+        $response = Response::json([
+            'message' => $message,
+            'data' => $image,
+        ], 201);
+
+        return $response;
+
+
     }
 
     /**
